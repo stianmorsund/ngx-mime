@@ -121,22 +121,31 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
     this.viewer.panVertical = true;
   }
 
-  // Create SVG-overlays for each page
-  createOverlays(): void {
+  processTiles(): void {
     this.overlays = [];
     let svgOverlay = this.viewer.svgOverlay();
     let svgNode = d3.select(svgOverlay.node());
 
-    this.tileSources.forEach((tile, i) => {
-      let tiledImage = this.viewer.world.getItemAt(i);
-      if (!tiledImage) { return; }
+    let center = new OpenSeadragon.Point(0, 0);
+    let currentX = center.x - (this.tileSources[0].width / 2);
 
-      let box = tiledImage.getBounds(true);
-      svgNode.append('rect').attrs({ x: box.x, y: box.y, width: box.width, height: box.height, class: 'tile' });
+    this.tileSources.forEach((tile, i) => {
+      this.viewer.addTiledImage({
+        index: i,
+        tileSource: tile,
+        height: tile.height,
+        x: currentX,
+        y: center.y - tile.height / 2
+      });
+
+      svgNode.append('rect').attrs({ x: currentX, y: center.y - tile.height / 2, width: tile.width, height: tile.height, class: 'tile' });
 
       let currentOverlay: HTMLElement = svgNode._groups[0][0].children[i];
       this.overlays.push(currentOverlay);
+
+      currentX = currentX + tile.width + 100;
     });
+
   }
 
   nextPage(): void {
@@ -185,7 +194,7 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
       let dashboardBounds = this.viewer.viewport.getBounds();
       this.viewer.viewport.fitBounds(dashboardBounds);
       // Also need to zoom out to defaultZoomLevel for dashboard-view after bounds are fitted...
-      this.viewer.viewport.zoomTo(this.options.defaultZoomLevel);
+    //  this.viewer.viewport.zoomTo(this.options.defaultZoomLevel);
     }
     if (this.mode === ViewerMode.PAGE) {
       let pageBounds = this.createRectangel(currentOverlay);
@@ -224,6 +233,7 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
       this.tileSources = manifest.tileSource;
       this.options = new Options(this.mode, this.tileSources);
 
+
       this.zone.runOutsideAngular(() => {
         this.viewer = new OpenSeadragon.Viewer(Object.assign({}, this.options));
       });
@@ -232,6 +242,8 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
       this.pageService = new PageService();
       this.pageService.numberOfPages = this.tileSources.length;
       this.setDashboardConstraints();
+      this.processTiles();
+      //this.createOverlays();
       this.addEvents();
     }
   }
@@ -245,8 +257,10 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
 
     this.clickService.reset();
     this.viewer.addHandler('open', (data: any) => {
+      console.log('open viewer');
+
+      //this.createOverlays();
       this.pageService.currentPage = 0;
-      this.createOverlays();
       this.fitBoundsToStart();
     });
 
@@ -258,6 +272,7 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
         if (requestedPage >= 0) {
 
           setTimeout(() => {
+
             this.toggleView();
             this.fitBounds(target);
           }, 250);
@@ -269,6 +284,12 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
 
     this.clickService.addDoubleClickHandler((event) => {
     });
+
+    // this.viewer.addHandler('tile-drawn', (event: any) => {
+    //   console.log('tiles are drawn');
+
+
+    // })
 
     this.viewer.addHandler('canvas-click', this.clickService.click);
 

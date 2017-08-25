@@ -16,6 +16,7 @@ import { ManifestBuilder } from '../core/builders/manifest.builder';
 import { testManifest } from '../test/testManifest';
 
 import 'openseadragon';
+import '../core/ext/svg-overlay';
 
 describe('ViewerComponent', function () {
   let de: DebugElement;
@@ -27,7 +28,7 @@ describe('ViewerComponent', function () {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      schemas: [ CUSTOM_ELEMENTS_SCHEMA ],
+      schemas: [CUSTOM_ELEMENTS_SCHEMA],
       imports: [
         HttpClientTestingModule,
         SharedModule,
@@ -77,14 +78,37 @@ describe('ViewerComponent', function () {
 
     expect(testHostComponent.viewerComponent.dialog.closeAll).toHaveBeenCalled();
   }));
+
+  it('should import overlays plugin', inject([IiifManifestService], (iiifManifestService: IiifManifestService) => {
+    comp.manifestUri = 'dummyURI';
+    const manifest = new ManifestBuilder(testManifest).build();
+    spy = spyOn(iiifManifestService, 'load').and.returnValue(Observable.of(manifest));
+
+    comp.ngOnInit();
+    expect(comp.viewer.svgOverlay()).not.toBeNull();
+  }));
+
+  // expect svg overlays to be defined
+  // expect toggleView to change ViewerMode
+  // e2e: when switching from page-mode: expect to set dashboardconstraints correctly
+  // e2e: when switching from dash-mode: expect to set pageconstraints correctly
+
+
+  // pageService:
+  // should not decrease currentPage when currentPage = 0
+  // should not increase currentPage when currentPage = numberOfPages
+
 });
 
 @Component({
-  selector : `test-component`,
-  template : `<mime-viewer [manifestUri]="manifestUri"></mime-viewer>`
+  selector: `test-component`,
+  template: `<mime-viewer [manifestUri]="manifestUri"></mime-viewer>`
 })
 export class TestHostComponent {
   @ViewChild(ViewerComponent)
   public viewerComponent: any;
   public manifestUri: string;
+  // public overlays: Array<HTMLElement>;
+  // public tileSources: any[];
+
 }

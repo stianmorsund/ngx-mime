@@ -19,7 +19,7 @@ export class Options {
   alwaysBlend = false;
   autoHideControls = true;
   immediateRender = false;
-  defaultZoomLevel = 0;
+  defaultZoomLevel =  0.0004;
   opacity = 1;
   compositeOperation: string = null;
   placeholderFillStyle: string | CanvasGradient | CanvasPattern = null;
@@ -108,24 +108,24 @@ export class Options {
   collectionColumns = 0;
   collectionLayout = 'horizontal';
   collectionTileSize = 800;
-  collectionTileMargin = 80;
+  collectionTileMargin = 8;
   crossOriginPolicy: string | boolean = false;
   ajaxWithCredentials = false;
 
   constructor(mode: ViewerMode, tileSources?: Service[]) {
     if (tileSources) {
-      this.tileSources = tileSources;
+      //this.tileSources = tileSources;
     }
 
-    if (mode === ViewerMode.DASHBOARD) {
-      this.collectionMode = true;
-      this.sequenceMode = false;
-      this.defaultZoomLevel = 0.0004;
-    }
-    if (mode === ViewerMode.PAGE) {
-      this.collectionMode = false;
-      this.sequenceMode = true;
-      this.defaultZoomLevel = 0;
-    }
+    // if (mode === ViewerMode.DASHBOARD) {
+    //   this.collectionMode = true;
+    //   this.sequenceMode = false;
+    //   this.defaultZoomLevel = 0.0004;
+    // }
+    // if (mode === ViewerMode.PAGE) {
+    //   this.collectionMode = false;
+    //   this.sequenceMode = true;
+    //   this.defaultZoomLevel = 0;
+    // }
   }
 }
