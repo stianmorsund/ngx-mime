@@ -19,7 +19,7 @@ export class Options {
   alwaysBlend = false;
   autoHideControls = true;
   immediateRender = false;
-  defaultZoomLevel =  0.0004;
+  defaultZoomLevel = 0.0004;
   opacity = 1;
   compositeOperation: string = null;
   placeholderFillStyle: string | CanvasGradient | CanvasPattern = null;
@@ -117,6 +117,7 @@ export class Options {
       //this.tileSources = tileSources;
     }
 
+    this.defaultZoomLevel = 0.0002;
     // if (mode === ViewerMode.DASHBOARD) {
     //   this.collectionMode = true;
     //   this.sequenceMode = false;

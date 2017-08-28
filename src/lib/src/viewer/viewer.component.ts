@@ -194,7 +194,7 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
       let dashboardBounds = this.viewer.viewport.getBounds();
       this.viewer.viewport.fitBounds(dashboardBounds);
       // Also need to zoom out to defaultZoomLevel for dashboard-view after bounds are fitted...
-    //  this.viewer.viewport.zoomTo(this.options.defaultZoomLevel);
+      this.viewer.viewport.zoomTo(this.options.defaultZoomLevel);
     }
     if (this.mode === ViewerMode.PAGE) {
       let pageBounds = this.createRectangel(currentOverlay);
@@ -243,7 +243,10 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
       this.pageService.numberOfPages = this.tileSources.length;
       this.setDashboardConstraints();
       this.processTiles();
-      //this.createOverlays();
+      this.pageService.currentPage = 0;
+      console.log('set currentpage = 0');
+
+      this.fitBoundsToStart();
       this.addEvents();
     }
   }
@@ -257,11 +260,6 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
 
     this.clickService.reset();
     this.viewer.addHandler('open', (data: any) => {
-      console.log('open viewer');
-
-      //this.createOverlays();
-      this.pageService.currentPage = 0;
-      this.fitBoundsToStart();
     });
 
     this.clickService.addSingleClickHandler((event: any) => {
@@ -275,6 +273,7 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
 
             this.toggleView();
             this.fitBounds(target);
+            this.pageService.currentPage = requestedPage;
           }, 250);
           this.changeDetectorRef.markForCheck();
 
@@ -284,12 +283,6 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
 
     this.clickService.addDoubleClickHandler((event) => {
     });
-
-    // this.viewer.addHandler('tile-drawn', (event: any) => {
-    //   console.log('tiles are drawn');
-
-
-    // })
 
     this.viewer.addHandler('canvas-click', this.clickService.click);
 
