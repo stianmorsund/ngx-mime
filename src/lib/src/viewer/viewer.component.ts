@@ -51,9 +51,11 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
   @ViewChild(ViewerFooterComponent) footer: ViewerFooterComponent;
 
   // References to clickable overlays
-  private overlays: Array<HTMLElement>;
-  private tileSources: any[];
+  public overlays: Array<HTMLElement>;
+  public tileSources: any[];
 
+
+  currentPageZoomLevel: number;
 
   constructor(
     private zone: NgZone,
@@ -115,10 +117,15 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   setDashboardConstraints(): void {
+
     this.viewer.panVertical = false;
+    this.viewer.setMouseNavEnabled = false;
+    this.viewer.zoomPerScroll = 1;
   }
   setPageConstraints(): void {
     this.viewer.panVertical = true;
+    this.viewer.setMouseNavEnabled = true;
+    this.viewer.zoomPerScroll = 1.2;
   }
 
   processTiles(): void {
@@ -199,6 +206,7 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
     if (this.mode === ViewerMode.PAGE) {
       let pageBounds = this.createRectangel(currentOverlay);
       this.viewer.viewport.fitBounds(pageBounds);
+      this.currentPageZoomLevel = this.viewer.viewport.getZoom();
     }
   }
 
@@ -233,7 +241,6 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
       this.tileSources = manifest.tileSource;
       this.options = new Options(this.mode, this.tileSources);
 
-
       this.zone.runOutsideAngular(() => {
         this.viewer = new OpenSeadragon.Viewer(Object.assign({}, this.options));
       });
@@ -244,7 +251,6 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
       this.setDashboardConstraints();
       this.processTiles();
       this.pageService.currentPage = 0;
-      console.log('set currentpage = 0');
 
       this.fitBoundsToStart();
       this.addEvents();
@@ -257,6 +263,11 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
 
   addEvents(): void {
     this.addPinchEvents();
+
+
+    this.viewer.addHandler('zoom', (data: any) => {
+    })
+
 
     this.clickService.reset();
     this.viewer.addHandler('open', (data: any) => {
@@ -274,6 +285,8 @@ export class ViewerComponent implements OnInit, OnDestroy, OnChanges {
             this.toggleView();
             this.fitBounds(target);
             this.pageService.currentPage = requestedPage;
+
+
           }, 250);
           this.changeDetectorRef.markForCheck();
 

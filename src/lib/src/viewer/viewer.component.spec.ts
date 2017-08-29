@@ -61,12 +61,10 @@ describe('ViewerComponent', function () {
   it('should create component', () => expect(comp).toBeDefined());
 
   it('should create viewer on init', inject([IiifManifestService], (iiifManifestService: IiifManifestService) => {
-    comp.manifestUri = 'dummyURI';
+    comp.manifestUri = 'dummyURI2';
     const manifest = new ManifestBuilder(testManifest).build();
     spy = spyOn(iiifManifestService, 'load').and.returnValue(Observable.of(manifest));
-
     comp.ngOnInit();
-
     expect(comp.viewer).not.toBeNull();
   }));
 
@@ -78,25 +76,6 @@ describe('ViewerComponent', function () {
 
     expect(testHostComponent.viewerComponent.dialog.closeAll).toHaveBeenCalled();
   }));
-
-  it('should import overlays plugin', inject([IiifManifestService], (iiifManifestService: IiifManifestService) => {
-    comp.manifestUri = 'dummyURI';
-    const manifest = new ManifestBuilder(testManifest).build();
-    spy = spyOn(iiifManifestService, 'load').and.returnValue(Observable.of(manifest));
-
-    comp.ngOnInit();
-    expect(comp.viewer.svgOverlay()).not.toBeNull();
-  }));
-
-  // expect svg overlays to be defined
-  // expect toggleView to change ViewerMode
-  // e2e: when switching from page-mode: expect to set dashboardconstraints correctly
-  // e2e: when switching from dash-mode: expect to set pageconstraints correctly
-
-
-  // pageService:
-  // should not decrease currentPage when currentPage = 0
-  // should not increase currentPage when currentPage = numberOfPages
 
 });
 
