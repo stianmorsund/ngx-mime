@@ -77,7 +77,6 @@ export class ViewerService {
 
   addOpenEvents(): void {
     this.viewer.addHandler('open', (data: any) => {
-      this.pageService.currentPage = 0;
       this.createOverlays();
       this.fitBoundsToStart();
     });
