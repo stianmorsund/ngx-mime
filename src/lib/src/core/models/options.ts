@@ -49,10 +49,10 @@ export class Options {
   dblClickDistThreshold = 20;
   springStiffness = 6.5;
   animationTime = 1.2;
-  gestureSettingsMouse: GestureSettingsMouse;
-  gestureSettingsTouch: GestureSettingsTouch;
-  gestureSettingsPen: GestureSettingsPen;
-  gestureSettingsUnknown: GestureSettingsUnknown;
+  gestureSettingsMouse = new GestureSettingsMouse();
+  gestureSettingsTouch = new GestureSettingsTouch();
+  gestureSettingsPen = new GestureSettingsPen ();
+  gestureSettingsUnknown = new GestureSettingsUnknown();
   zoomPerClick = 2.0;
   zoomPerScroll = 1.2;
   zoomPerSecond = 1.0;
@@ -118,14 +118,18 @@ export class Options {
     }
 
     if (mode === ViewerMode.DASHBOARD) {
+      console.log("options dashboardmode")
       this.collectionMode = true;
       this.sequenceMode = false;
       this.defaultZoomLevel = 0.0004;
+      this.gestureSettingsMouse.scrollToZoom = false;
     }
     if (mode === ViewerMode.PAGE) {
+      console.log("options page-mode")
       this.collectionMode = false;
       this.sequenceMode = true;
       this.defaultZoomLevel = 0;
+      this.gestureSettingsMouse.scrollToZoom = true;
     }
   }
 }

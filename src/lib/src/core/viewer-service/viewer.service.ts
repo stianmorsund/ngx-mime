@@ -13,13 +13,18 @@ declare const OpenSeadragon: any;
 
 @Injectable()
 export class ViewerService {
-  private readonly ZOOMFACTOR = 0.02;
+  private readonly ZOOMFACTOR = 0.0002;
   private viewer: any;
   private options: Options;
   // References to clickable overlays
   private overlays: Array<HTMLElement>;
   private tileSources: any[];
   private subscriptions: Array<Subscription> = [];
+
+
+  private currentPagePressed: number;
+  private previousTogglePinchDistance = 0;
+  private zoomLevel = 0;
 
   constructor(
     private zone: NgZone,
@@ -41,6 +46,7 @@ export class ViewerService {
 
       this.addToWindow();
       this.addEvents();
+      this.zoomLevel = this.getZoom();
     }
   }
 
@@ -71,8 +77,8 @@ export class ViewerService {
 
   addEvents(): void {
     this.addOpenEvents();
-    this.addPinchEvents();
     this.addClickEvents();
+    this.addPinchEvents();
   }
 
   addOpenEvents(): void {
@@ -82,20 +88,33 @@ export class ViewerService {
     });
   }
 
+  toggleMode(mode: ViewerMode) {
+    if (mode === ViewerMode.DASHBOARD) {
+      this.setDashboardSettings();
+    } else if (mode === ViewerMode.PAGE) {
+      this.setPageSettings();
+    }
+  }
+
+  setDashboardSettings(): void {
+    this.viewer.panVertical = false;
+  }
+
+  setPageSettings(): void {
+    this.viewer.panVertical = true;
+  }
+
   addClickEvents(): void {
+
     this.clickService.reset();
 
     this.clickService.addSingleClickHandler((event: any) => {
       let target: HTMLElement = event.originalEvent.target;
-
-      if (target.nodeName === 'rect') {
-        let requestedPage = this.overlays.indexOf(target);
-        if (requestedPage >= 0) {
-
-          this.pageService.currentPage = requestedPage;
-          this.modeService.toggleMode();
-          this.fitBounds(target);
-        }
+      let requestedPage = this.getOverlayIndexFromClickEvent(event.originalEvent.target);
+      if (requestedPage >= 0) {
+        this.pageService.currentPage = requestedPage;
+        this.modeService.toggleMode();
+        this.fitBounds(target);
       }
     });
 
@@ -109,27 +128,41 @@ export class ViewerService {
         event.preventDefaultAction = true;
       }
     });
+
+    this.viewer.addHandler('canvas-press', (event: any) => {
+      this.currentPagePressed = this.getOverlayIndexFromClickEvent(event.originalEvent.target);
+    })
+
+    this.viewer.addHandler('canvas-scroll', (event: any) => {
+    })
+
+    this.viewer.addHandler('canvas-release', (data: any) => {
+      this.previousTogglePinchDistance = 0;
+    });
   }
 
   addPinchEvents(): void {
-    let previousDistance = 0;
-    let zoomTo = this.getZoom();
-    this.viewer.addHandler('canvas-pinch', (data: any) => {
-      if (data.lastDistance > previousDistance) { // Pinch Out
-        zoomTo = this.getZoom() + this.ZOOMFACTOR;
-      } else { // Pinch In
-        zoomTo = this.getZoom() - this.ZOOMFACTOR;
-        if (zoomTo < this.getHomeZoom()) {
-          zoomTo = this.getHomeZoom();
+    this.viewer.addHandler('canvas-pinch', this.pinchHandlerToggleMode);
+  }
+
+  pinchHandlerToggleMode = (event: any) => {
+    // Pinch Out
+    if (event.lastDistance > this.previousTogglePinchDistance) {
+      if (this.modeService.mode === ViewerMode.DASHBOARD) {
+        if (this.currentPagePressed >= 0) {
+          this.pageService.currentPage = this.currentPagePressed;
+          this.modeService.toggleMode();
+          this.fitBounds(this.overlays[this.currentPagePressed]);
         }
       }
-      this.zoomTo(zoomTo);
-      previousDistance = data.lastDistance;
-    });
-
-    this.viewer.addHandler('canvas-release', (data: any) => {
-      previousDistance = 0;
-    });
+    // Pinch In
+    } else {
+      if (this.modeService.mode === ViewerMode.PAGE) {
+        this.modeService.toggleMode();
+        this.zoomTo(this.getHomeZoom())
+      }
+    }
+    this.previousTogglePinchDistance = event.lastDistance;
   }
 
   public getZoom(): number {
@@ -162,13 +195,7 @@ export class ViewerService {
     }
   }
 
-  toggleMode(mode: ViewerMode) {
-    if (mode === ViewerMode.DASHBOARD) {
-      this.setDashboardConstraints();
-    } else if (mode === ViewerMode.PAGE) {
-      this.setPageConstraints();
-    }
-  }
+
 
   // Create SVG-overlays for each page
   createOverlays(): void {
@@ -210,6 +237,7 @@ export class ViewerService {
     let box = this.overlays[page];
     let pageBounds = this.createRectangel(box);
     this.viewer.viewport.fitBounds(pageBounds);
+
   }
 
   // Toggle viewport-bounds between page and dashboard
@@ -234,12 +262,17 @@ export class ViewerService {
     );
   }
 
-  setDashboardConstraints(): void {
-    this.viewer.panVertical = false;
+
+  getOverlayIndexFromClickEvent(target: HTMLElement) {
+    if (target.nodeName === 'rect') {
+      let requestedPage = this.overlays.indexOf(target);
+      if (requestedPage >= 0) {
+        return requestedPage;
+      }
+    }
+    return -1;
   }
 
-  setPageConstraints(): void {
-    this.viewer.panVertical = true;
-  }
+
 
 }

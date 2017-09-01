@@ -17,7 +17,7 @@ export class GestureSettingsMouse extends GestureSettings {
 export class GestureSettingsTouch extends GestureSettings {
   clickToZoom = false;
   dblClickToZoom = true;
-  pinchToZoom = true;
+  pinchToZoom = false;
 }
 
 export class GestureSettingsPen extends GestureSettings {
