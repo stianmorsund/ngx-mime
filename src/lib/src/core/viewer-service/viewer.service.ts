@@ -1,19 +1,18 @@
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable, NgZone, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs/Subscription';
-import { ClickService } from '../../core/click/click.service';
 import { ModeService } from '../../core/mode-service/mode.service';
 import { Manifest } from '../models/manifest';
 import { Options } from '../models/options';
 import { PageService } from '../page-service/page-service';
 import { ViewerMode } from '../models/viewer-mode';
+import { ClickService } from '../click/click.service';
 import '../ext/svg-overlay';
 import * as d3 from 'd3';
 
 declare const OpenSeadragon: any;
 
 @Injectable()
-export class ViewerService {
-  private readonly ZOOMFACTOR = 0.0002;
+export class ViewerService implements OnInit {
   private viewer: any;
   private options: Options;
   // References to clickable overlays
@@ -32,11 +31,14 @@ export class ViewerService {
     private pageService: PageService,
     private modeService: ModeService) { }
 
+  ngOnInit(): void { }
+
   setUpViewer(manifest: Manifest) {
     if (manifest.tileSource) {
       this.options = new Options(this.modeService.mode, manifest.tileSource)
       this.tileSources = manifest.tileSource;
       this.zone.runOutsideAngular(() => {
+        this.clearOpenSeadragonTooltips();
         this.viewer = new OpenSeadragon.Viewer(Object.assign({}, this.options));
       });
 
@@ -79,6 +81,7 @@ export class ViewerService {
     this.addOpenEvents();
     this.addClickEvents();
     this.addPinchEvents();
+    this.addDblClickEvents();
   }
 
   addOpenEvents(): void {
@@ -109,9 +112,11 @@ export class ViewerService {
     this.clickService.reset();
 
     this.clickService.addSingleClickHandler((event: any) => {
+      console.log("SINGLE CLICK")
       let target: HTMLElement = event.originalEvent.target;
       let requestedPage = this.getOverlayIndexFromClickEvent(event.originalEvent.target);
       if (requestedPage >= 0) {
+
         this.pageService.currentPage = requestedPage;
         this.modeService.toggleMode();
         this.fitBounds(target);
@@ -148,14 +153,13 @@ export class ViewerService {
   pinchHandlerToggleMode = (event: any) => {
     // Pinch Out
     if (event.lastDistance > this.previousTogglePinchDistance) {
-      if (this.modeService.mode === ViewerMode.DASHBOARD) {
-        if (this.currentPagePressed >= 0) {
-          this.pageService.currentPage = this.currentPagePressed;
-          this.modeService.toggleMode();
-          this.fitBounds(this.overlays[this.currentPagePressed]);
-        }
+      if (this.modeService.mode === ViewerMode.DASHBOARD
+        && this.currentPagePressed >= 0) {
+        this.pageService.currentPage = this.currentPagePressed;
+        this.modeService.toggleMode();
+        this.fitBounds(this.overlays[this.currentPagePressed]);
       }
-    // Pinch In
+      // Pinch In
     } else {
       if (this.modeService.mode === ViewerMode.PAGE) {
         this.modeService.toggleMode();
@@ -163,26 +167,39 @@ export class ViewerService {
       }
     }
     this.previousTogglePinchDistance = event.lastDistance;
+
+  }
+  addDblClickEvents(): void {
+    this.clickService.addDoubleClickHandler((event) => {
+      if (this.getZoom() > this.getHomeZoom()) {
+        this.fitVertically();
+      } else {
+        this.zoomTo(this.getZoom() * this.options.zoomPerClick);
+      }
+    });
+
+    this.viewer.addHandler('canvas-click', this.clickService.click);
+    this.viewer.addHandler('canvas-double-click', this.clickService.click);
   }
 
   public getZoom(): number {
-    return this.viewer.viewport.getZoom();
+    return this.shortenDecimals(this.viewer.viewport.getZoom(true), 5);
   }
 
   public getHomeZoom(): number {
-    return this.viewer.viewport.getHomeZoom();
+    return this.shortenDecimals(this.viewer.viewport.getHomeZoom(), 5);
   }
 
   public getMinZoom(): number {
-    return this.viewer.viewport.getMinZoom();
+    return this.shortenDecimals(this.viewer.viewport.getMinZoom(), 5);
   }
 
   public getMaxZoom(): number {
-    return this.viewer.viewport.getMaxZoom();
+    return this.shortenDecimals(this.viewer.viewport.getMaxZoom(), 5);
   }
 
   public zoomHome(): void {
-    this.zoomTo(this.getHomeZoom());
+    this.viewer.viewport.goHome(false);
   }
 
   public zoomTo(level: number): void {
@@ -270,9 +287,27 @@ export class ViewerService {
         return requestedPage;
       }
     }
+
     return -1;
   }
 
 
 
+  public fitVertically(): void {
+    this.viewer.viewport.fitVertically(false);
+  }
+
+  private clearOpenSeadragonTooltips() {
+    OpenSeadragon.setString('Tooltips.Home', '');
+    OpenSeadragon.setString('Tooltips.ZoomOut', '');
+    OpenSeadragon.setString('Tooltips.ZoomIn', '');
+    OpenSeadragon.setString('Tooltips.NextPage', '');
+    OpenSeadragon.setString('Tooltips.ZoomIn', '');
+    OpenSeadragon.setString('Tooltips.FullPage', '');
+  }
+
+  private shortenDecimals(zoom: string, precision: number): number {
+    const short = Number(zoom).toPrecision(precision);
+    return Number(short);
+  }
 }
