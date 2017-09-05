@@ -115,6 +115,6 @@ export class Options {
     // if (tileSources) {
     //   this.tileSources = tileSources;
     // }
-    this.defaultZoomLevel = 0.0002;
+    this.defaultZoomLevel = 0.00015;
   }
 }

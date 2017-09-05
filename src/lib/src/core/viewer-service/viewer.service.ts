@@ -1,3 +1,5 @@
+import { OptionsTransitions } from '../models/options-transitions';
+import { OptionsOverlays } from '../models/options-overlays';
 import { Injectable, NgZone, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs/Subscription';
 import { ModeService } from '../../core/mode-service/mode.service';
@@ -13,7 +15,7 @@ declare const OpenSeadragon: any;
 
 @Injectable()
 export class ViewerService implements OnInit {
-  private readonly ZOOMFACTOR = 0.0002;
+
   private viewer: any;
   private options: Options;
 
@@ -186,7 +188,7 @@ export class ViewerService implements OnInit {
     } else {
       if (this.modeService.mode === ViewerMode.PAGE) {
         this.modeService.toggleMode();
-        this.zoomTo(this.getHomeZoom())
+        this.zoomTo(this.getHomeZoom());
       }
     }
     this.previousTogglePinchDistance = event.lastDistance;
@@ -233,7 +235,6 @@ export class ViewerService implements OnInit {
     let center = new OpenSeadragon.Point(0, 0);
     let currentX = center.x - (this.tileSources[0].width / 2);
 
-
     this.tileSources.forEach((tile, i) => {
       let currentY = center.y - tile.height / 2;
       this.viewer.addTiledImage({
@@ -251,11 +252,10 @@ export class ViewerService implements OnInit {
         .attr('height', tile.height)
         .attr('class', 'tile');
 
-
       let currentOverlay: HTMLElement = this.svgNode.node().children[i];
       this.overlays.push(currentOverlay);
 
-      currentX = currentX + tile.width + 100;
+      currentX = currentX + tile.width + OptionsOverlays.TILES_MARGIN;
     });
   }
 
@@ -308,7 +308,7 @@ export class ViewerService implements OnInit {
 
 
   getOverlayIndexFromClickEvent(target: HTMLElement) {
-    if (target.nodeName === 'rect') {
+    if (this.isPageHit(target)) {
       let requestedPage = this.overlays.indexOf(target);
       if (requestedPage >= 0) {
         return requestedPage;
