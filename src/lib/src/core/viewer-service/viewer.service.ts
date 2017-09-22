@@ -205,14 +205,31 @@ export class ViewerService implements OnInit {
     });
   }
 
-  // Binds to OSD-Toolbar button
+
   zoomIn(): void {
+    this.modeService.mode = ViewerMode.PAGE_ZOOMED;
     this.zoomTo(this.getZoom() + CustomOptions.zoom.zoomFactor);
+    // this.zoomTo(this.getZoom() * this.options.zoomPerClick);
+
+    this.viewer.addOnceHandler('animation-finish', () => {
+      this.resizeViewportContainerToFitPage();
+   });
+
   }
 
-  // Binds to OSD-Toolbar button
   zoomOut(): void {
-    this.isPageFittedOrSmaller() ? this.toggleToPage() : this.zoomTo(this.getZoom() - CustomOptions.zoom.zoomFactor);
+    if (this.modeService.mode === ViewerMode.PAGE) {
+      return;
+    }
+    if (this.isViewportLargerThanPage()) {
+      this.toggleToPage();
+    } else {
+      this.zoomTo(this.getZoom() - CustomOptions.zoom.zoomFactor);
+    }
+
+    this.viewer.addOnceHandler('animation-finish', () => {
+      this.resizeViewportContainerToFitPage();
+   });
   }
 
 
@@ -255,8 +272,8 @@ export class ViewerService implements OnInit {
    */
   setPageSettings(): void {
     this.viewer.panVertical = true;
-    this.viewer.gestureSettingsTouch.pinchToZoom = true;
-    this.viewer.gestureSettingsMouse.scrollToZoom = true;
+    this.viewer.gestureSettingsTouch.pinchToZoom = false;
+    this.viewer.gestureSettingsMouse.scrollToZoom = false;
   }
 
   /**
@@ -284,10 +301,16 @@ export class ViewerService implements OnInit {
       return;
     }
     this.modeService.mode = ViewerMode.PAGE;
-    this.goToPage(this.pageService.currentPage);
 
-    PagePositionUtils.updatePagePositions(
-      this.viewer, this.pageService.currentPage, CustomOptions.overlays.pageMarginPageView, this.overlays, this.centerPoints);
+    this.fitBounds((this.overlays[this.pageService.currentPage]));
+
+    this.goToHomeZoom();
+
+    //this.goToPage(this.pageService.currentPage);
+
+
+    // PagePositionUtils.updatePagePositions(
+    //   this.viewer, this.pageService.currentPage, CustomOptions.overlays.pageMarginPageView, this.overlays, this.centerPoints);
   }
 
   /**
@@ -327,16 +350,16 @@ export class ViewerService implements OnInit {
     if (this.modeService.mode === ViewerMode.DASHBOARD) {
       this.toggleToPage();
     } else {
-      this.resizeViewportContainerToFitPage();
+      this.zoomIn();
     }
   }
 
   zoomOutGesture(): void {
-    if (this.modeService.mode === ViewerMode.PAGE) {
-      if (this.isPageFittedOrSmaller()) {
+    if (this.modeService.mode === ViewerMode.PAGE || this.modeService.mode === ViewerMode.PAGE_ZOOMED) {
+      if (this.isViewportLargerThanPage()) {
         this.toggleToDashboard();
       } else {
-        this.resizeViewportContainerToFitPage();
+        this.zoomOut();
       }
     }
   }
@@ -366,9 +389,12 @@ export class ViewerService implements OnInit {
     const target = event.originalEvent.target;
     // Page is fitted vertically, so dbl-click zooms in
     if (this.modeService.mode === ViewerMode.PAGE) {
-      this.modeService.mode = ViewerMode.PAGE_ZOOMED;
-      this.zoomTo(this.getZoom() * this.options.zoomPerClick);
+
+      //this.modeService.mode = ViewerMode.PAGE_ZOOMED;
+      //this.zoomTo(this.getZoom() * this.options.zoomPerClick);
+      this.zoomIn();
     } else {
+
       this.modeService.mode = ViewerMode.PAGE;
       const requestedPage: number = this.getOverlayIndexFromClickEvent(target);
       if (requestedPage >= 0) {
@@ -382,15 +408,63 @@ export class ViewerService implements OnInit {
    * Called each time an animation ends
    */
   animationsEndCallback = () => {
+    //this.setModeCallback();
 
   }
 
-  isPageFittedOrSmaller(): boolean {
+  isViewportLargerThanPage(): boolean {
     const pageBounds = this.createRectangle(this.overlays[this.pageService.currentPage]);
     const viewportBounds = this.viewer.viewport.getBounds();
-    return (pageBounds.width <= viewportBounds.width)
-      || (pageBounds.height <= viewportBounds.height);
+    const pbWidth = Math.round(pageBounds.width);
+    const pbHeight = Math.round(pageBounds.height);
+    const vpWidth = Math.round(viewportBounds.width);
+    const vpHeight = Math.round(viewportBounds.height);
+
+    // console.log("page height", pbHeight)
+    // console.log("vp height", vpHeight)
+    return (vpHeight >= pbHeight)
+    //|| (vpWidth >= pbWidth);
+    //return (pbWidth <= vpWidth) || (pbHeight <= vpHeight);
   }
+
+  setModeCallback() {
+    const pageBounds = this.createRectangle(this.overlays[this.pageService.currentPage]);
+    const viewportBounds = this.viewer.viewport.getBounds();
+    const widthIsFitted = Utils.numbersAreClose(pageBounds.width, viewportBounds.width, 5);
+    const heightIsFitted = Utils.numbersAreClose(pageBounds.height, viewportBounds.height, 5);
+
+    if (
+      widthIsFitted || heightIsFitted
+    ) {
+      console.log('switching to PAGE-mode');
+      this.modeService.mode = ViewerMode.PAGE;
+    } else if (
+      this.getZoom() === this.getHomeZoom()
+    ) {
+
+    } else if (
+      (Math.round(pageBounds.width) > Math.round(viewportBounds.width)) ||
+      (Math.round(pageBounds.height) > Math.round(viewportBounds.height))
+    ) {
+      console.log('switching to PAGE_ZOOMED-mode');
+      this.modeService.mode = ViewerMode.PAGE_ZOOMED;
+    }
+  }
+
+  // isZoomedInPageMode(): boolean {
+  //   const pageBounds = this.createRectangle(this.overlays[this.pageService.currentPage]);
+  //   const viewportBounds = this.viewer.viewport.getBounds();
+
+  //   // const widthIsFitted = Utils.numbersAreClose(svgParentDimensions.width, overlayDimensions.width, 5);
+  //   // const heightIsFitted = Utils.numbersAreClose(svgParentDimensions.height, overlayDimensions.height, 5);
+  //   console.log("pageBounds.width", Math.round(pageBounds.width))
+  //   console.log("vpwidth", Math.round(viewportBounds.width))
+  //   return (
+  //     Math.round(pageBounds.width) > Math.round(viewportBounds.width)) ||
+  //     (Math.round(pageBounds.height) > Math.round(viewportBounds.height)
+
+  //   );
+  // }
 
   /**
    * Checks if hit element is a <rect>-element
@@ -535,12 +609,15 @@ export class ViewerService implements OnInit {
     });
 
     if (this.modeService.mode === ViewerMode.DASHBOARD || this.modeService.mode === ViewerMode.PAGE) {
+      console.log("swiping with dash or page")
       this.goToPage(newPageIndex);
 
     } else if (this.modeService.mode === ViewerMode.PAGE_ZOOMED) {
+      console.log("swiping with zoomed in")
       // We need to zoom out before we go to next page in zoomed-in-mode
       if (SwipeUtils.isPanningOutsidePage(pageBounds, viewportBounds)) {
         this.fitBounds(this.overlays[this.pageService.currentPage]);
+        this.modeService.mode = ViewerMode.PAGE;
         setTimeout(() => {
           this.goToPage(newPageIndex);
         }, CustomOptions.transitions.OSDAnimationTime);

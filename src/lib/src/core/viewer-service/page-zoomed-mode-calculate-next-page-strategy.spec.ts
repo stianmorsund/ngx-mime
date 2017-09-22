@@ -8,9 +8,9 @@ describe('PageZoomedModeCalculateNextPageStrategy ', () => {
   });
 
 
-  it('should stay on same page when speed is below 50', () => {
+  it('should stay on same page when speed is below 30', () => {
     const res = strategy.calculateNextPage({
-      speed: 45,
+      speed: 25,
       direction: 'left',
       currentPageIndex: 1
     });
@@ -18,9 +18,9 @@ describe('PageZoomedModeCalculateNextPageStrategy ', () => {
     expect(res).toBe(1);
   });
 
-  it('should get next page if speed is 50 and direction is left', () => {
+  it('should get next page if speed is 30 and direction is left', () => {
     const res = strategy.calculateNextPage({
-      speed: 50,
+      speed: 30,
       direction: 'left',
       currentPageIndex: 1
     });
@@ -28,9 +28,9 @@ describe('PageZoomedModeCalculateNextPageStrategy ', () => {
     expect(res).toBe(2);
   });
 
-  it('should get previous page if speed is 50 and direction is right', () => {
+  it('should get previous page if speed is 30 and direction is right', () => {
     const res = strategy.calculateNextPage({
-      speed: 50,
+      speed: 30,
       direction: 'right',
       currentPageIndex: 2
     });
