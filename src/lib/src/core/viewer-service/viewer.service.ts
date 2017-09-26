@@ -28,6 +28,10 @@ export class ViewerService implements OnInit {
   public isCanvasPressed: Subject<boolean> = new Subject<boolean>();
 
 
+
+  private fixedBounds: any;
+
+
   constructor(
     private zone: NgZone,
     private clickService: ClickService,
@@ -87,10 +91,15 @@ export class ViewerService implements OnInit {
         this.setSettings(mode);
       }));
 
+
+
       this.addToWindow();
       this.createOverlays();
       this.addEvents();
 
+
+      let bound = this.createRectangle(this.overlays[this.pageService.currentPage + 5])
+      this.viewer.viewport.fitBounds(bound, false);
 
 
     }
@@ -206,6 +215,16 @@ export class ViewerService implements OnInit {
   toggleToDashboard(): void {
     this.modeService.mode = ViewerMode.DASHBOARD;
     this.zoomTo(this.getHomeZoom());
+
+    // this.showAllPages();
+  }
+
+  getCanvas(): any {
+    return this.viewer.drawer.canvas;
+  }
+
+  getContext(): any {
+    return this.viewer.drawer.context;
   }
 
   /**
@@ -215,9 +234,53 @@ export class ViewerService implements OnInit {
     if (!this.pageService.isCurrentPageValid()) {
       return;
     }
+
+
     this.modeService.mode = ViewerMode.PAGE;
+
+
+
+
     this.fitBounds(this.overlays[this.pageService.currentPage]);
+
+    const item = this.viewer.world.getItemAt(this.pageService.currentPage);
+    const overlay = this.overlays[this.pageService.currentPage]
+    const vp = this.viewer.viewport.getBounds();
+    let canvas = this.viewer.drawer.canvas;
+    let ctx = this.viewer.drawer.context;
+    let bounds = this.createRectangle(this.overlays[this.pageService.currentPage]);
+    // vp coord --> web  coord
+    // let zoom = this.viewer.viewport.getZoom(true);
+    // let scale = this.viewer.viewport._containerInnerSize.x * zoom;
+
+
+    // x, y, width, height
+    // console.log(vp)
+    // console.log("overlaysbounds", bounds)
+    // console.log("tilebounds", item.getBounds())
+
+    // console.log("drawn width:", bounds.width / 1.5)
+    // console.log("drawn height:", bounds.height / 1.4)
+
+    let p = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
+    // let clippedBounds = item.setClip(vp);
+    // console.log("clippedbounds", clippedBounds)
+    // ctx.lineWidth = 10;
+    // ctx.strokeStyle = 'red';
+    ctx.rect(
+      507,
+      0,
+      bounds.width / 2.4,
+      bounds.height / 1.4
+    );
+    ctx.stroke();
+    ctx.clip();
+    // Draw red rectangle after clip()
+
   }
+
+
+
 
   /**
    * Scroll-toggle-handler
