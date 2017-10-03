@@ -333,7 +333,7 @@ export class ViewerService {
   /**
    * Switches to DASHBOARD-mode, repositions pages and removes max-width on viewer
    */
-  toggleToDashboard(): void {
+  private toggleToDashboard(): void {
     if (!this.pageService.isCurrentPageValid()) {
       return;
     }

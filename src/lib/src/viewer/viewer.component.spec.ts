@@ -220,7 +220,7 @@ describe('ViewerComponent', function () {
    * Singleclicks
    **************************************/
   it('should change to PAGE-mode when singleclicking in DASHBOARD-mode', fakeAsync(() => {
-    viewerService.toggleToDashboard();
+    modeService.mode = ViewerMode.DASHBOARD;
 
     const firstOverlay = viewerService.getOverlays()[0];
     const clickEvent = createClickEvent(firstOverlay);
