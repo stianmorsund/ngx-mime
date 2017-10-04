@@ -5,7 +5,7 @@ describe('PageService', () => {
 
   beforeEach(() => {
     service = new PageService();
-    service.numberOfPages = 100;
+    service.initialise(100, 0);
   });
 
   it('#isWithinBounds should return true when requested page is within bounds', () => {
@@ -90,6 +90,21 @@ describe('PageService', () => {
 
     newPage = service.constrainToRange(-10);
     expect(newPage).toBe(0);
+  });
+
+  it('should set initialPage to currentPage', () => {
+    service.initialise(100, 55);
+    expect(service.currentPage).toBe(55);
+  });
+
+  it('should set initialPage to 0 if initialPage is not provided', () => {
+    service.initialise(100);
+    expect(service.currentPage).toBe(0);
+  });
+
+  it('should set initialPage to 0 if initialPage is not a valid page', () => {
+    service.initialise(100, 200);
+    expect(service.currentPage).toBe(0);
   });
 
 });

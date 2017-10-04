@@ -140,7 +140,7 @@ export class ViewerService implements OnInit {
     this.goToPage(newPageIndex, false);
   }
 
-  public goToPage(pageIndex: number, immediately: boolean): void {
+  public goToPage(pageIndex: number, immediately?: boolean): void {
     if (!this.pageService.isWithinBounds(pageIndex)) {
       return;
     }
@@ -190,15 +190,14 @@ export class ViewerService implements OnInit {
     }
   }
 
-  setUpViewer(manifest: Manifest) {
+  setUpViewer(manifest: Manifest, initialPage?: number) {
     if (manifest && manifest.tileSource) {
       this.tileSources = manifest.tileSource;
       this.zone.runOutsideAngular(() => {
         this.clearOpenSeadragonTooltips();
         this.options = new Options();
         this.viewer = new OpenSeadragon.Viewer(Object.assign({}, this.options));
-        this.pageService.reset();
-        this.pageService.numberOfPages = this.tileSources.length;
+        this.pageService.initialise(this.tileSources.length, initialPage);
         this.pageMask = new PageMask(this.viewer);
       });
 
@@ -215,6 +214,7 @@ export class ViewerService implements OnInit {
       this.setupOverlays();
       this.createOverlays();
       this.addEvents();
+
     }
   }
 
@@ -450,7 +450,6 @@ export class ViewerService implements OnInit {
    */
   createOverlays(): void {
     this.overlays = [];
-    const initialPage = 0;
     const center = new OpenSeadragon.Point(0, 0);
     const height = this.tileSources[0].height;
     let currentX = center.x - (this.tileSources[0].width / 2);
@@ -464,9 +463,7 @@ export class ViewerService implements OnInit {
           height: tile.height,
           x: currentX,
           y: currentY,
-          success: i === initialPage ? (e: any) => {
-            e.item.addOnceHandler('fully-loaded-change', () => { this.initialPageLoaded(); });
-          } : ''
+          success: i === this.pageService.currentPage ? (e: any) => this.initialPageLoaded() : ''
         });
       });
 
@@ -496,6 +493,7 @@ export class ViewerService implements OnInit {
    * Sets viewer size and opacity once the first page has fully loaded
    */
   initialPageLoaded = (): void => {
+    this.goToPage(this.pageService.currentPage, true);
     this.pageMask.initialise(this.overlays[this.pageService.currentPage]);
     d3.select(this.viewer.container.parentNode).transition().duration(ViewerOptions.transitions.OSDAnimationTime).style('opacity', '1');
   }

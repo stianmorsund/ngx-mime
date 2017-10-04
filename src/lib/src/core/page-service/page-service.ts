@@ -7,11 +7,11 @@ export class PageService {
   private _numberOfPages: number;
 
   constructor() {
-    this._currentPage = 0;
   }
 
-  reset() {
-    this._currentPage = 0;
+  initialise(numberOfPages: number, initialPage?: number) {
+    this._numberOfPages = numberOfPages;
+    this._currentPage = this.isWithinBounds(initialPage) ? initialPage : 0;
   }
 
   set currentPage(currentPage: number) {
