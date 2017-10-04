@@ -451,7 +451,6 @@ export class ViewerService implements OnInit {
   createOverlays(): void {
     this.overlays = [];
     const center = new OpenSeadragon.Point(0, 0);
-    const height = this.tileSources[0].height;
     let currentX = center.x - (this.tileSources[0].width / 2);
 
     this.tileSources.forEach((tile, i) => {
@@ -463,7 +462,9 @@ export class ViewerService implements OnInit {
           height: tile.height,
           x: currentX,
           y: currentY,
-          success: i === this.pageService.currentPage ? (e: any) => this.initialPageLoaded() : ''
+          success: i === 0 ? (e: any) => {
+            e.item.addOnceHandler('fully-loaded-change', () => this.initialPageLoaded());
+          } : ''
         });
       });
 
