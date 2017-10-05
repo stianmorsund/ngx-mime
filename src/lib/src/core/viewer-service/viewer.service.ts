@@ -683,13 +683,14 @@ export class ViewerService {
       pageEndHitCountReached = this.swipeDragEndCounter.hitCountReached();
     }
 
-    const newPageIndex = calculateNextPageStrategy.calculateNextPage({
+    const newPageIndex = this.pageService.constrainToRange(
+      calculateNextPageStrategy.calculateNextPage({
       isPastCenter: isPanningPastCenter,
       speed: speed,
       direction: direction,
       currentPageIndex: currentPageIndex,
       pageEndHitCountReached: pageEndHitCountReached
-    });
+    }));
     if (
       this.modeService.mode === ViewerMode.DASHBOARD ||
       this.modeService.mode === ViewerMode.PAGE ||

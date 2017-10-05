@@ -13,6 +13,6 @@ export class PageModeCalculateNextPageStrategy implements CalculateNextPageStrat
     let nextPage = (speed >= 200 || isPastCenter) ? 1 : 0;
     nextPage = direction === Direction.LEFT ? nextPage : nextPage * -1;
     nextPage = currentPageIndex + nextPage;
-    return new PageService().constrainToRange(nextPage);
+    return nextPage;
   }
 }
