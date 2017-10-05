@@ -151,12 +151,11 @@ export class ViewerService {
   }
 
   public goToPage(pageIndex: number, immediately: boolean): void {
-    if (!this.pageService.isWithinBounds(pageIndex)) {
-      return;
-    }
+
     const oldIndex = this.pageService.currentPage;
-    this.pageService.currentPage = pageIndex;
-    const newPageCenter = this.tileRects.get(pageIndex);
+    const newIndex = this.pageService.constrainToRange(pageIndex);
+    this.pageService.currentPage = newIndex;
+    const newPageCenter = this.tileRects.get(newIndex);
     if (this.modeService.mode === ViewerMode.PAGE_ZOOMED) {
       const oldPageCenter = this.tileRects.get(oldIndex);
       this.panTo(oldPageCenter.centerX, oldPageCenter.centerY, immediately);
@@ -683,14 +682,13 @@ export class ViewerService {
       pageEndHitCountReached = this.swipeDragEndCounter.hitCountReached();
     }
 
-    const newPageIndex = this.pageService.constrainToRange(
-      calculateNextPageStrategy.calculateNextPage({
-      isPastCenter: isPanningPastCenter,
-      speed: speed,
-      direction: direction,
-      currentPageIndex: currentPageIndex,
-      pageEndHitCountReached: pageEndHitCountReached
-    }));
+    const newPageIndex = calculateNextPageStrategy.calculateNextPage({
+        isPastCenter: isPanningPastCenter,
+        speed: speed,
+        direction: direction,
+        currentPageIndex: currentPageIndex,
+        pageEndHitCountReached: pageEndHitCountReached
+      });
     if (
       this.modeService.mode === ViewerMode.DASHBOARD ||
       this.modeService.mode === ViewerMode.PAGE ||
